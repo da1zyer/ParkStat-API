@@ -1,28 +1,28 @@
 package com.parkstat.backend.parkstat.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-
-import java.util.ArrayList;
 
 @Entity
 public class Parking {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    private static int idCounter = 1;
+
     @Column(name = "name", nullable = false)
     private String name;
-    // Remove when has ParkingDAO, it is just for test
-    public static ArrayList<Parking> list = new ArrayList<>();
+
+    @ManyToOne
+    @JoinColumn(name = "userId", nullable = false)
+    @JsonIgnore
+    private User user;
 
     public Parking() {
-        setId(idCounter++);
         setName("default");
     }
-    public Parking(String name) {
-        setId(idCounter++);
+    public Parking(String name, User user) {
         setName(name);
-        list.add(this);
+        setUser(user);
     }
 
     public void setId(int id) {
@@ -37,5 +37,12 @@ public class Parking {
     }
     public String getName() {
         return name;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+    public User getUser() {
+        return user;
     }
 }
