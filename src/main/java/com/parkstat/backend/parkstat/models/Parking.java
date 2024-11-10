@@ -1,6 +1,7 @@
 package com.parkstat.backend.parkstat.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.parkstat.backend.parkstat.dto.ParkingDTO;
 import jakarta.persistence.*;
 
 @Entity
@@ -15,6 +16,9 @@ public class Parking {
     @Column(name = "spaceCount", nullable = false)
     private int spaceCount;
 
+    @Column(name = "takenSpaceCount", nullable = false)
+    private int takenSpaceCount;
+
     @ManyToOne
     @JoinColumn(name = "userId", nullable = false)
     @JsonIgnore
@@ -23,9 +27,10 @@ public class Parking {
     public Parking() {
 
     }
-    public Parking(String name, int spaceCount, User user) {
-        setName(name);
-        setSpaceCount(spaceCount);
+    public Parking(ParkingDTO parkingDTO, User user) {
+        setName(parkingDTO.getName());
+        setSpaceCount(parkingDTO.getSpaceCount());
+        setTakenSpaceCount(parkingDTO.getTakenSpaceCount());
         setUser(user);
     }
 
@@ -48,6 +53,13 @@ public class Parking {
     }
     public int getSpaceCount() {
         return spaceCount;
+    }
+
+    public void setTakenSpaceCount(int takenSpaceCount) {
+        this.takenSpaceCount = takenSpaceCount;
+    }
+    public int getTakenSpaceCount() {
+        return takenSpaceCount;
     }
 
     public void setUser(User user) {

@@ -1,16 +1,9 @@
 package com.parkstat.backend.parkstat.dto;
 
-import jakarta.validation.constraints.NotNull;
-
-public class ParkingDTO {
-    private String name = "Парковка";
-
-    @NotNull(message = "You must provide Space Count")
+public class ParkingUpdateDTO{
+    private String name;
     private Integer spaceCount;
-    private Integer takenSpaceCount = 0;
-
-    @NotNull(message = "You must provide User Id")
-    private int userId;
+    private Integer takenSpaceCount;
 
     public void setName(String name) {
         this.name = name;
@@ -31,12 +24,5 @@ public class ParkingDTO {
     }
     public Integer getTakenSpaceCount() {
         return takenSpaceCount;
-    }
-
-    public void setUserId(int userId) {
-        this.userId = userId;
-    }
-    public int getUserId() {
-        return userId;
     }
 }
