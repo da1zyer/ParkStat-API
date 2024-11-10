@@ -12,16 +12,20 @@ public class Parking {
     @Column(name = "name", nullable = false)
     private String name;
 
+    @Column(name = "spaceCount", nullable = false)
+    private int spaceCount;
+
     @ManyToOne
     @JoinColumn(name = "userId", nullable = false)
     @JsonIgnore
     private User user;
 
     public Parking() {
-        setName("default");
+
     }
-    public Parking(String name, User user) {
+    public Parking(String name, int spaceCount, User user) {
         setName(name);
+        setSpaceCount(spaceCount);
         setUser(user);
     }
 
@@ -37,6 +41,13 @@ public class Parking {
     }
     public String getName() {
         return name;
+    }
+
+    public void setSpaceCount(int spaceCount) {
+        this.spaceCount = spaceCount;
+    }
+    public int getSpaceCount() {
+        return spaceCount;
     }
 
     public void setUser(User user) {
