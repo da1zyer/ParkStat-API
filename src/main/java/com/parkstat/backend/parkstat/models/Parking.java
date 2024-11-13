@@ -2,6 +2,7 @@ package com.parkstat.backend.parkstat.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.parkstat.backend.parkstat.dto.ParkingDTO;
+import com.parkstat.backend.parkstat.models.user.User;
 import jakarta.persistence.*;
 
 @Entity

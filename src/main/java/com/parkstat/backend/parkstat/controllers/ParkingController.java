@@ -3,7 +3,7 @@ package com.parkstat.backend.parkstat.controllers;
 import com.parkstat.backend.parkstat.dto.ParkingDTO;
 import com.parkstat.backend.parkstat.dto.ParkingUpdateDTO;
 import com.parkstat.backend.parkstat.models.Parking;
-import com.parkstat.backend.parkstat.models.User;
+import com.parkstat.backend.parkstat.models.user.User;
 import com.parkstat.backend.parkstat.repositories.ParkingRepository;
 import com.parkstat.backend.parkstat.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;

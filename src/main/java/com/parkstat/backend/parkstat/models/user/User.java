@@ -1,5 +1,7 @@
-package com.parkstat.backend.parkstat.models;
+package com.parkstat.backend.parkstat.models.user;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.parkstat.backend.parkstat.models.Parking;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
@@ -25,6 +27,7 @@ public class User {
     private String password;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Parking> parkings;
 
     public User() {
