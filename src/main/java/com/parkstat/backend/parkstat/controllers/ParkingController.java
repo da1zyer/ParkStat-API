@@ -2,10 +2,12 @@ package com.parkstat.backend.parkstat.controllers;
 
 import com.parkstat.backend.parkstat.dto.ParkingDTO;
 import com.parkstat.backend.parkstat.dto.ParkingUpdateDTO;
+import com.parkstat.backend.parkstat.jwt.JwtCore;
 import com.parkstat.backend.parkstat.models.Parking;
 import com.parkstat.backend.parkstat.models.user.User;
 import com.parkstat.backend.parkstat.repositories.ParkingRepository;
 import com.parkstat.backend.parkstat.repositories.UserRepository;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -15,38 +17,56 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController("/park")
+@SecurityRequirement(name = "bearerAuth")
 public class ParkingController {
     @Autowired
     private ParkingRepository parkingRepository;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private JwtCore jwtCore;
 
     @PostMapping
-    public Parking create(@RequestBody ParkingDTO parkingDTO) {
-        Optional<User> userOptional = userRepository.findById(parkingDTO.getUserId());
-        if (userOptional.isPresent()) {
-            if (parkingDTO.getSpaceCount() <= 0) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Space Count must be greater than 0");
-            }
-            else {
-                if (parkingDTO.getTakenSpaceCount() < 0 || parkingDTO.getTakenSpaceCount() > parkingDTO.getSpaceCount()) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Taken Spaces < 0 or greater than Space Count");
+    public Parking create(
+            // Not sure if "required = false" is the best solution
+            // But with it, you should not manually insert token in header
+            @RequestHeader(name = "Authorization", required = false) String authHeader,
+            @RequestBody ParkingDTO parkingDTO
+    ) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            String name = jwtCore.getNameFromJwt(token);
+            Optional<User> userOptional = userRepository.findUserByName(name);
+            if (userOptional.isPresent()) {
+                if (parkingDTO.getSpaceCount() <= 0) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Space Count must be greater than 0");
                 }
                 else {
-                    User user = userOptional.get();
-                    Parking parking = new Parking(parkingDTO, user);
-                    parkingRepository.save(parking);
-                    return parking;
+                    if (parkingDTO.getTakenSpaceCount() < 0 || parkingDTO.getTakenSpaceCount() > parkingDTO.getSpaceCount()) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Taken Spaces < 0 or greater than Space Count");
+                    }
+                    else {
+                        User user = userOptional.get();
+                        Parking parking = new Parking(parkingDTO, user);
+                        parkingRepository.save(parking);
+                        return parking;
+                    }
                 }
+            }
+            else {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
             }
         }
         else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "bla bla bla...");
         }
     }
 
     @GetMapping
-    public Parking get(@RequestParam int id) {
+    public Parking get(
+            @RequestHeader(name = "Authorization", required = false) String authHeader,
+            @RequestParam int id
+    ) {
         Optional<Parking> parkingOptional = parkingRepository.findById(id);
         if (parkingOptional.isPresent()) {
             return parkingOptional.get();

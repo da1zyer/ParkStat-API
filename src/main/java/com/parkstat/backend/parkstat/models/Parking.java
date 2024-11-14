@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.parkstat.backend.parkstat.dto.ParkingDTO;
 import com.parkstat.backend.parkstat.models.user.User;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 public class Parking {
@@ -15,12 +18,14 @@ public class Parking {
     private String name;
 
     @Column(name = "spaceCount", nullable = false)
+    @NotNull
     private int spaceCount;
 
     @Column(name = "takenSpaceCount", nullable = false)
     private int takenSpaceCount;
 
-    @ManyToOne
+    @ManyToOne()
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "userId", nullable = false)
     @JsonIgnore
     private User user;
