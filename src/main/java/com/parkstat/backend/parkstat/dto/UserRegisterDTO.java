@@ -1,34 +1,41 @@
 package com.parkstat.backend.parkstat.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 public class UserRegisterDTO {
     @NotNull(message = "Name is required")
-    private String name;
+    @Size(min = 4, max = 32, message = "The name length must be from 4 to 32 characters")
+    private final String name;
 
     @NotNull(message = "Email is required")
-    private String email;
+    @Email(message = "Invalid email address")
+    private final String email;
 
     @NotNull(message = "Password is required")
-    private String password;
+    @Size(min = 8, max = 32, message = "The password length must be from 8 to 32 characters")
+    private final String password;
 
-    public void setName(String name) {
+    @JsonCreator
+    public UserRegisterDTO(@JsonProperty String name,
+                           @JsonProperty String email,
+                           @JsonProperty String password) {
         this.name = name;
+        this.email = email;
+        this.password = password;
     }
+
     public String getName() {
         return name;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
     public String getEmail() {
         return email;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
     public String getPassword() {
         return password;
     }

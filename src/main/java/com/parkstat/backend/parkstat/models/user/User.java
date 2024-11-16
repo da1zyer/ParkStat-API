@@ -13,7 +13,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "name", nullable = false)
+    @Column(name = "name", nullable = false, unique = true)
     @NotNull
     private String name;
 
@@ -29,9 +29,8 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<Parking> parkings;
-    public User() {
 
-    }
+    public User() { }
     public User(String name, String email, String password) {
         setName(name);
         setEmail(email);
