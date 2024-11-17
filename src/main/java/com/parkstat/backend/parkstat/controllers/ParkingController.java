@@ -67,12 +67,26 @@ public class ParkingController {
             @RequestHeader(name = "Authorization", required = false) String authHeader,
             @RequestParam int id
     ) {
-        Optional<Parking> parkingOptional = parkingRepository.findById(id);
-        if (parkingOptional.isPresent()) {
-            return parkingOptional.get();
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            String name = jwtCore.getNameFromJwt(token);
+            Optional<User> userOptional = userRepository.findUserByName(name);
+            Optional<Parking> parkingOptional = parkingRepository.findById(id);
+            if (parkingOptional.isPresent()) {
+                Parking parking = parkingOptional.get();
+                if (parking.getUser().getId() == userOptional.get().getId()) {
+                    return parking;
+                }
+                else {
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "bla bla bla...");
+                }
+            }
+            else {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Parking not found");
+            }
         }
         else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Parking not found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "bla bla bla...");
         }
     }
 

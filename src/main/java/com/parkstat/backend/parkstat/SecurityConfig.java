@@ -68,7 +68,8 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(authorize ->
-                        authorize.requestMatchers("/**").permitAll()
+                        authorize.requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll()
+                                .anyRequest().authenticated()
                 )
                 .addFilterBefore(tokenFilter, UsernamePasswordAuthenticationFilter.class);
 

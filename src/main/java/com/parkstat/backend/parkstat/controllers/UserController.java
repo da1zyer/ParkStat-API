@@ -2,92 +2,47 @@ package com.parkstat.backend.parkstat.controllers;
 
 import com.parkstat.backend.parkstat.dto.UserLoginDTO;
 import com.parkstat.backend.parkstat.dto.UserRegisterDTO;
-import com.parkstat.backend.parkstat.jwt.JwtCore;
+import com.parkstat.backend.parkstat.models.TokenResponse;
 import com.parkstat.backend.parkstat.models.user.User;
 import com.parkstat.backend.parkstat.repositories.UserRepository;
+import com.parkstat.backend.parkstat.service.AuthService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
-@RestController("/auth")
+@RestController
+@RequestMapping("/auth")
 public class UserController {
+    @Autowired
     private UserRepository userRepository;
+    @Autowired
     private PasswordEncoder passwordEncoder;
-    private AuthenticationManager authenticationManager;
-    private JwtCore jwtCore;
-
     @Autowired
-    public void setAuthenticationManager(AuthenticationManager authenticationManager) {
-        this.authenticationManager = authenticationManager;
-    }
-
-    @Autowired
-    public void setJwtCore(JwtCore jwtCore) {
-        this.jwtCore = jwtCore;
-    }
-
-    @Autowired
-    public void setPasswordEncoder(PasswordEncoder passwordEncoder) {
-        this.passwordEncoder = passwordEncoder;
-    }
-
-    @Autowired
-    public void setUserRepository(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+    private AuthService authService;
 
     @PostMapping("/register")
-    public String register(@RequestBody UserRegisterDTO userRegisterDTO) {
-        System.out.println("Hi");
+    public TokenResponse register(@Valid @RequestBody UserRegisterDTO userRegisterDTO) {
+        if (userRepository.existsUserByName(userRegisterDTO.getName())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "An account with this name already exists");
+        }
         if (userRepository.existsUserByEmail(userRegisterDTO.getEmail())) {
-            return "0";
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "An account with this email already exists");
         }
-        User user = new User();
-        user.setName(userRegisterDTO.getName());
-        user.setEmail(userRegisterDTO.getEmail());
-        user.setPassword(passwordEncoder.encode(userRegisterDTO.getPassword()));
+        String hashedPassword = passwordEncoder.encode(userRegisterDTO.getPassword());
+        User user = new User(userRegisterDTO.getName(), userRegisterDTO.getEmail(), hashedPassword);
         userRepository.save(user);
-        Authentication authentication = null;
-        System.out.println("Hello");
-        try {
-            authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            user.getEmail(), user.getPassword()
-                    )
-            );
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            String jwt = jwtCore.generateToken(authentication);
-            return jwt;
-        }
-        catch (BadCredentialsException e) {
-            //...
-        }
-        return "0";
+        return authService.auth(userRegisterDTO.getName(), userRegisterDTO.getPassword());
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody UserLoginDTO userLoginDTO) {
-        Authentication authentication = null;
+    public TokenResponse login(@RequestBody UserLoginDTO userLoginDTO) {
         try {
-            authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            userLoginDTO.getEmail(), userLoginDTO.getPassword()
-                    )
-            );
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            String jwt = jwtCore.generateToken(authentication);
-            return jwt;
+            return authService.auth(userLoginDTO.getName(), userLoginDTO.getPassword());
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Incorrect name or password");
         }
-        catch (BadCredentialsException e) {
-            //...
-        }
-        return "0";
     }
 }
