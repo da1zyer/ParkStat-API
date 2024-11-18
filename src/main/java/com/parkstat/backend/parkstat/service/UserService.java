@@ -1,5 +1,6 @@
 package com.parkstat.backend.parkstat.service;
 
+import com.parkstat.backend.parkstat.jwt.JwtCore;
 import com.parkstat.backend.parkstat.models.user.User;
 import com.parkstat.backend.parkstat.models.user.UserDetailsImpl;
 import com.parkstat.backend.parkstat.repositories.UserRepository;
@@ -17,6 +18,8 @@ import java.util.Optional;
 public class UserService implements UserDetailsService {
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private JwtCore jwtCore;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -26,6 +29,23 @@ public class UserService implements UserDetailsService {
         }
         else {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
+    }
+
+    public User getUserFromHeader(String header) {
+        if (header != null && header.startsWith("Bearer ")) {
+            String token = header.substring(7);
+            String name = jwtCore.getNameFromJwt(token);
+            Optional<User> userOptional = userRepository.findUserByName(name);
+            if (userOptional.isPresent()) {
+                return userOptional.get();
+            }
+            else {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Token provided, but user not found");
+            }
+        }
+        else {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "The token must be provided");
         }
     }
 }

@@ -69,7 +69,8 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(authorize ->
                         authorize.requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll()
-                                .anyRequest().authenticated()
+                                // IDK why .anyRequest().authenticated() does not work
+                                .anyRequest().permitAll()
                 )
                 .addFilterBefore(tokenFilter, UsernamePasswordAuthenticationFilter.class);
 

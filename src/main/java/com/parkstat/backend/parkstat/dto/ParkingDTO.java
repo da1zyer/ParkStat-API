@@ -1,31 +1,41 @@
 package com.parkstat.backend.parkstat.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 public class ParkingDTO {
-    private String name = "Парковка";
+    private final String name;
 
     @NotNull(message = "You must provide Space Count")
-    private Integer spaceCount;
-    private Integer takenSpaceCount = 0;
+    @Min(value = 1, message = "Space Count must be greater than 0")
+    private final Integer spaceCount;
 
-    public void setName(String name) {
-        this.name = name;
+    @Min(value = 0, message = "Taken Spaces < 0")
+    private final Integer takenSpaceCount;
+
+    @JsonCreator
+    public ParkingDTO(@JsonProperty String name,
+                      @JsonProperty Integer spaceCount,
+                      @JsonProperty Integer takenSpaceCount) {
+        if (name == null) this.name = "Парковка";
+        else this.name = name;
+
+        this.spaceCount = spaceCount;
+
+        if (takenSpaceCount == null) this.takenSpaceCount = 0;
+        else this.takenSpaceCount = takenSpaceCount;
     }
+
     public String getName() {
         return name;
     }
 
-    public void setSpaceCount(Integer spaceCount) {
-        this.spaceCount = spaceCount;
-    }
     public Integer getSpaceCount() {
         return spaceCount;
     }
 
-    public void setTakenSpaceCount(Integer takenSpaceCount) {
-        this.takenSpaceCount = takenSpaceCount;
-    }
     public Integer getTakenSpaceCount() {
         return takenSpaceCount;
     }
