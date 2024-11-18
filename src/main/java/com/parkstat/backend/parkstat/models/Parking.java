@@ -2,11 +2,14 @@ package com.parkstat.backend.parkstat.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.parkstat.backend.parkstat.dto.ParkingDTO;
+import com.parkstat.backend.parkstat.models.log.Log;
 import com.parkstat.backend.parkstat.models.user.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+
+import java.util.List;
 
 @Entity
 public class Parking {
@@ -29,6 +32,12 @@ public class Parking {
     @JoinColumn(name = "userId", nullable = false)
     @JsonIgnore
     private User user;
+
+    @OneToMany(mappedBy = "parking", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Car> cars;
+
+    @OneToMany(mappedBy = "parking", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Log> logs;
 
     public Parking() {
 
