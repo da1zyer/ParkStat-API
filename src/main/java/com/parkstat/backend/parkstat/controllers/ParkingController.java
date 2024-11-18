@@ -6,8 +6,13 @@ import com.parkstat.backend.parkstat.models.Parking;
 import com.parkstat.backend.parkstat.models.user.User;
 import com.parkstat.backend.parkstat.repositories.ParkingRepository;
 import com.parkstat.backend.parkstat.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,6 +22,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.Optional;
 
+@Tag(name = "Parking")
 @RestController
 @RequestMapping("/park")
 @SecurityRequirement(name = "bearerAuth")
@@ -26,7 +32,28 @@ public class ParkingController {
     @Autowired
     private UserService userService;
 
-    @PostMapping
+    @Operation(summary = "Create new parking")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully created",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Parking.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Validation error",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "The token must be provided",
+                    content = @Content
+            )
+    })
+    @PostMapping(path = "", produces = "application/json")
     public Parking create(
             @Schema(hidden = true)
             @RequestHeader(name = "Authorization", required = false) String authHeader,
@@ -41,7 +68,33 @@ public class ParkingController {
         return parking;
     }
 
-    @GetMapping
+    @Operation(summary = "Get parking by id")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully received",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Parking.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Validation error",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "The token must be provided",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Parking does not belong to the user",
+                    content = @Content
+            )
+    })
+    @GetMapping(path = "", produces = "application/json")
     public Parking get(
             @Schema(hidden = true)
             @RequestHeader(name = "Authorization", required = false) String authHeader,
@@ -63,7 +116,38 @@ public class ParkingController {
         }
     }
 
-    @PatchMapping
+    @Operation(summary = "Change parking parameters")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully updated",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Parking.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Validation error",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "The token must be provided",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Parking not found",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Parking does not belong to the user",
+                    content = @Content
+            )
+    })
+    @PatchMapping(path = "", produces = "application/json")
     public Parking update(
             @Schema(hidden = true)
             @RequestHeader(name = "Authorization", required = false) String authHeader,
@@ -102,7 +186,23 @@ public class ParkingController {
         }
     }
 
-    @GetMapping("/all")
+    @Operation(summary = "Get all user parking")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully received",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Parking.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "The token must be provided",
+                    content = @Content
+            )
+    })
+    @GetMapping(path = "/all", produces = "application/json")
     public List<Parking> getAll(
             @Schema(hidden = true)
             @RequestHeader(name = "Authorization", required = false) String authHeader) {
