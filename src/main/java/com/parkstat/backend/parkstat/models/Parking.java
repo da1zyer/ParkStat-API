@@ -27,6 +27,14 @@ public class Parking {
     @Column(name = "takenSpaceCount", nullable = false)
     private int takenSpaceCount;
 
+    // This column stores an encrypted key.
+    // The key must be provided by the ML model
+    // to enable logging functionality.
+    @Column(name = "accessKey", nullable = false)
+    @NotNull
+    @JsonIgnore
+    private String accessKey;
+
     @ManyToOne()
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "userId", nullable = false)
@@ -42,10 +50,11 @@ public class Parking {
     public Parking() {
 
     }
-    public Parking(ParkingDTO parkingDTO, User user) {
+    public Parking(ParkingDTO parkingDTO, User user, String accessKey) {
         setName(parkingDTO.getName());
         setSpaceCount(parkingDTO.getSpaceCount());
         setTakenSpaceCount(parkingDTO.getTakenSpaceCount());
+        setAccessKey(accessKey);
         setUser(user);
     }
 
@@ -75,6 +84,13 @@ public class Parking {
     }
     public int getTakenSpaceCount() {
         return takenSpaceCount;
+    }
+
+    public void setAccessKey(String accessKey) {
+        this.accessKey = accessKey;
+    }
+    public String getAccessKey() {
+        return accessKey;
     }
 
     public void setUser(User user) {

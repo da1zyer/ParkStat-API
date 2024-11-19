@@ -5,6 +5,7 @@ import com.parkstat.backend.parkstat.dto.ParkingUpdateDTO;
 import com.parkstat.backend.parkstat.models.Parking;
 import com.parkstat.backend.parkstat.models.user.User;
 import com.parkstat.backend.parkstat.repositories.ParkingRepository;
+import com.parkstat.backend.parkstat.service.EncryptionService;
 import com.parkstat.backend.parkstat.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -31,6 +32,8 @@ public class ParkingController {
     private ParkingRepository parkingRepository;
     @Autowired
     private UserService userService;
+    @Autowired
+    private EncryptionService encryptionService;
 
     @Operation(summary = "Create new parking")
     @ApiResponses(value = {
@@ -63,9 +66,14 @@ public class ParkingController {
         if (parkingDTO.getTakenSpaceCount() > parkingDTO.getSpaceCount()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Taken Spaces greater than Space Count");
         }
-        Parking parking = new Parking(parkingDTO, user);
-        parkingRepository.save(parking);
-        return parking;
+        try {
+            String accessKey = encryptionService.encryptKey(parkingDTO.getAccessKey());
+            Parking parking = new Parking(parkingDTO, user, accessKey);
+            parkingRepository.save(parking);
+            return parking;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Encryption error");
+        }
     }
 
     @Operation(summary = "Get parking by id")
@@ -160,6 +168,7 @@ public class ParkingController {
                 String name = parkingUpdateDTO.getName();
                 Integer spaceCount = parkingUpdateDTO.getSpaceCount();
                 Integer takenSpaceCount = parkingUpdateDTO.getTakenSpaceCount();
+                String accessKey = parkingUpdateDTO.getAccessKey();
                 if (name != null) {
                     parking.setName(name);
                 }
@@ -172,6 +181,14 @@ public class ParkingController {
                     }
                     else {
                         parking.setTakenSpaceCount(takenSpaceCount);
+                    }
+                }
+                if (accessKey != null) {
+                    try {
+                        String newKey = encryptionService.encryptKey(accessKey);
+                        parking.setAccessKey(newKey);
+                    } catch (Exception e) {
+                        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Encryption error");
                     }
                 }
                 parkingRepository.save(parking);

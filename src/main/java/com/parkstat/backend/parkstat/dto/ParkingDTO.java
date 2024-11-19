@@ -15,10 +15,14 @@ public class ParkingDTO {
     @Min(value = 0, message = "Taken Spaces < 0")
     private final Integer takenSpaceCount;
 
+    @NotNull(message = "You must provide access key")
+    private final String accessKey;
+
     @JsonCreator
     public ParkingDTO(@JsonProperty String name,
                       @JsonProperty Integer spaceCount,
-                      @JsonProperty Integer takenSpaceCount) {
+                      @JsonProperty Integer takenSpaceCount,
+                      @JsonProperty String accessKey) {
         if (name == null) this.name = "Парковка";
         else this.name = name;
 
@@ -26,6 +30,8 @@ public class ParkingDTO {
 
         if (takenSpaceCount == null) this.takenSpaceCount = 0;
         else this.takenSpaceCount = takenSpaceCount;
+
+        this.accessKey = accessKey;
     }
 
     public String getName() {
@@ -38,5 +44,9 @@ public class ParkingDTO {
 
     public Integer getTakenSpaceCount() {
         return takenSpaceCount;
+    }
+
+    public String getAccessKey() {
+        return accessKey;
     }
 }
