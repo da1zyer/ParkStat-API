@@ -1,5 +1,6 @@
 package com.parkstat.backend.parkstat.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.parkstat.backend.parkstat.models.log.Log;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -14,13 +15,14 @@ public class Car {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "plate", nullable = false)
+    @Column(name = "plate", nullable = false, unique = true)
     @NotNull
     private String plate;
 
     @ManyToOne
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "parkingId", nullable = false)
+    @JoinColumn(name = "parkingId", nullable = true)
+    @JsonIgnore
     private Parking parking;
 
     @OneToMany(mappedBy = "car", cascade = CascadeType.ALL, orphanRemoval = true)
