@@ -56,12 +56,27 @@ public class LogController {
                 }
                 int changeTakenSpaceCount = 0;
                 if (logDTO.getEvent().equals(CarEvent.ENTRY)) {
+                    if (car.getParking() != null) {
+                        throw new ResponseStatusException(HttpStatus.CONFLICT, "The car is parked somewhere else");
+                    }
                     car.setParking(parking);
                     changeTakenSpaceCount++;
                 }
                 else if (logDTO.getEvent().equals(CarEvent.EXIT)) {
-                    car.setParking(null);
-                    changeTakenSpaceCount--;
+                    boolean flag = false;
+                    for (Car parkedCar : carRepository.findCarByParkingId(parking.getId())) {
+                        if (parkedCar.getId() == car.getId()) {
+                            flag = true;
+                            break;
+                        }
+                    }
+                    if (flag) {
+                        car.setParking(null);
+                        changeTakenSpaceCount--;
+                    }
+                    else {
+                        throw new ResponseStatusException(HttpStatus.CONFLICT, "The car is not parked here");
+                    }
                 }
                 parking.setTakenSpaceCount(parking.getTakenSpaceCount() + changeTakenSpaceCount);
                 carRepository.save(car);
