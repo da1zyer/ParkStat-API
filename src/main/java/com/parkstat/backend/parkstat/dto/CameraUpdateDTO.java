@@ -11,6 +11,7 @@ public class CameraUpdateDTO {
     @NotNull
     private final int parkingId;
 
+    @NotNull
     private final String ip;
 
     @JsonCreator

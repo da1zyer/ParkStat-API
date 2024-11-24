@@ -1,11 +1,9 @@
 package com.parkstat.backend.parkstat.controllers;
 
-import com.parkstat.backend.parkstat.dto.CameraDTO;
-import com.parkstat.backend.parkstat.dto.CameraUpdateDTO;
-import com.parkstat.backend.parkstat.dto.ParkingDTO;
-import com.parkstat.backend.parkstat.dto.ParkingUpdateDTO;
+import com.parkstat.backend.parkstat.dto.*;
 import com.parkstat.backend.parkstat.models.Camera;
 import com.parkstat.backend.parkstat.models.Parking;
+import com.parkstat.backend.parkstat.models.log.CarEvent;
 import com.parkstat.backend.parkstat.models.user.User;
 import com.parkstat.backend.parkstat.repositories.CameraRepository;
 import com.parkstat.backend.parkstat.repositories.ParkingRepository;
@@ -252,6 +250,33 @@ public class ParkingController {
                 camera.setParking(parking);
                 cameraRepository.save(camera);
                 return camera;
+            }
+            else {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Parking does not belong to the user");
+            }
+        }
+        else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Parking not found");
+        }
+    }
+
+    @GetMapping(path = "/camera", produces = "application/json")
+    public Camera getCamera(
+            @Schema(hidden = true)
+            @RequestHeader(name = "Authorization", required = false) String authHeader,
+            @RequestParam int parkingId,
+            @RequestParam CarEvent event) {
+        User user = userService.getUserFromHeader(authHeader);
+        Optional<Parking> parkingOptional = parkingRepository.findById(parkingId);
+        if (parkingOptional.isPresent()) {
+            Parking parking = parkingOptional.get();
+            if (parking.getUser().getId() == user.getId()) {
+                for (Camera camera : cameraRepository.findCameraByParkingId(parkingId)) {
+                    if (camera.getEvent().equals(event)) {
+                        return camera;
+                    }
+                }
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Camera not found");
             }
             else {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Parking does not belong to the user");
