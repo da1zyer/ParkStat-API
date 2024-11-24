@@ -47,6 +47,9 @@ public class Parking {
     @OneToMany(mappedBy = "parking", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Log> logs;
 
+    @OneToMany(mappedBy = "parking", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Camera> cameras;
+
     public Parking() {
 
     }
