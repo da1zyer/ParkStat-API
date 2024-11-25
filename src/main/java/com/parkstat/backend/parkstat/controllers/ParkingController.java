@@ -58,6 +58,11 @@ public class ParkingController {
                     responseCode = "401",
                     description = "The token must be provided",
                     content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Encryption error",
+                    content = @Content
             )
     })
     @PostMapping(path = "", produces = "application/json")
@@ -91,13 +96,13 @@ public class ParkingController {
                     )
             ),
             @ApiResponse(
-                    responseCode = "400",
-                    description = "Validation error",
+                    responseCode = "401",
+                    description = "The token must be provided",
                     content = @Content
             ),
             @ApiResponse(
-                    responseCode = "401",
-                    description = "The token must be provided",
+                    responseCode = "404",
+                    description = "Parking not found",
                     content = @Content
             ),
             @ApiResponse(
@@ -156,6 +161,11 @@ public class ParkingController {
             @ApiResponse(
                     responseCode = "409",
                     description = "Parking does not belong to the user",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Encryption error",
                     content = @Content
             )
     })
@@ -231,6 +241,42 @@ public class ParkingController {
         return parkingRepository.findByUserId(user.getId());
     }
 
+    @Operation(summary = "Create new camera")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully created",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Camera.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Validation error",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "The token must be provided",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Parking does not belong to the user",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Parking not found",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "A camera with this event already exists",
+                    content = @Content
+            )
+    })
     @PostMapping(path = "/camera", produces = "application/json")
     public Camera createCamera(
             @Schema(hidden = true)
@@ -252,7 +298,7 @@ public class ParkingController {
                 return camera;
             }
             else {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Parking does not belong to the user");
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Parking does not belong to the user");
             }
         }
         else {
@@ -260,6 +306,32 @@ public class ParkingController {
         }
     }
 
+    @Operation(summary = "Get camera")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully received",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Camera.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "The token must be provided",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Parking does not belong to the user",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Parking or Camera not found",
+                    content = @Content
+            )
+    })
     @GetMapping(path = "/camera", produces = "application/json")
     public Camera getCamera(
             @Schema(hidden = true)
@@ -279,7 +351,7 @@ public class ParkingController {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Camera not found");
             }
             else {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Parking does not belong to the user");
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Parking does not belong to the user");
             }
         }
         else {
@@ -287,6 +359,42 @@ public class ParkingController {
         }
     }
 
+    @Operation(summary = "Change camera parameters")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully updated",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Camera.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Validation error",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "The token must be provided",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Parking does not belong to the user",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Parking or Camera not found",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Camera does not belong to the parking",
+                    content = @Content
+            )
+    })
     @PatchMapping(path = "/camera", produces = "application/json")
     public Camera updateCamera(
             @Schema(hidden = true)
@@ -314,7 +422,7 @@ public class ParkingController {
                 }
             }
             else {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Parking does not belong to the user");
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Parking does not belong to the user");
             }
         }
         else {
