@@ -1,5 +1,6 @@
 package com.parkstat.backend.parkstat.models.log;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.parkstat.backend.parkstat.models.Car;
 import com.parkstat.backend.parkstat.models.Parking;
 import jakarta.persistence.*;
@@ -24,6 +25,7 @@ public class Log {
     @ManyToOne
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "parkingId", nullable = false)
+    @JsonIgnore
     private Parking parking;
 
     @ManyToOne
