@@ -217,6 +217,59 @@ public class ParkingController {
         }
     }
 
+    @Operation(summary = "Delete parking")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully deleted",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Parking.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Validation error",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "The token must be provided",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Parking not found",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Parking does not belong to the user",
+                    content = @Content
+            )
+    })
+    @DeleteMapping(path = "", produces = "application/json")
+    public Parking delete(
+            @Schema(hidden = true)
+            @RequestHeader(name = "Authorization", required = false) String authHeader,
+            @Valid @RequestBody ParkingDeleteDTO parkingDeleteDTO) {
+        Optional<Parking> parkingOptional = parkingRepository.findById(parkingDeleteDTO.getId());
+        if (parkingOptional.isPresent()) {
+            User user = userService.getUserFromHeader(authHeader);
+            Parking parking = parkingOptional.get();
+            if (user.getId() == parking.getUser().getId()) {
+                parkingRepository.delete(parking);
+                return parking;
+            }
+            else {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Parking does not belong to the user");
+            }
+        }
+        else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Parking not found");
+        }
+    }
+
     @Operation(summary = "Get all user parking")
     @ApiResponses(value = {
             @ApiResponse(
@@ -411,6 +464,76 @@ public class ParkingController {
                     if (camera.getParking().getId() == parking.getId()) {
                         camera.setIp(cameraUpdateDTO.getIp());
                         cameraRepository.save(camera);
+                        return camera;
+                    }
+                    else {
+                        throw new ResponseStatusException(HttpStatus.CONFLICT, "Camera does not belong to the parking");
+                    }
+                }
+                else {
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Camera not found");
+                }
+            }
+            else {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Parking does not belong to the user");
+            }
+        }
+        else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Parking not found");
+        }
+    }
+
+    @Operation(summary = "Delete camera")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully deleted",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Camera.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Validation error",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "The token must be provided",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Parking does not belong to the user",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Parking or Camera not found",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Camera does not belong to the parking",
+                    content = @Content
+            )
+    })
+    @DeleteMapping(path = "/camera", produces = "application/json")
+    public Camera deleteCamera(
+            @Schema(hidden = true)
+            @RequestHeader(name = "Authorization", required = false) String authHeader,
+            @Valid @RequestBody CameraDeleteDTO cameraDeleteDTO) {
+        Optional<Parking> parkingOptional = parkingRepository.findById(cameraDeleteDTO.getParkingId());
+        if (parkingOptional.isPresent()) {
+            User user = userService.getUserFromHeader(authHeader);
+            Parking parking = parkingOptional.get();
+            if (user.getId() == parking.getUser().getId()) {
+                Optional<Camera> optionalCamera = cameraRepository.findById(cameraDeleteDTO.getId());
+                if (optionalCamera.isPresent()) {
+                    Camera camera = optionalCamera.get();
+                    if (camera.getParking().getId() == parking.getId()) {
+                        cameraRepository.delete(camera);
                         return camera;
                     }
                     else {
