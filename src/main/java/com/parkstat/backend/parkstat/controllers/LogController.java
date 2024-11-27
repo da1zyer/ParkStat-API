@@ -9,6 +9,11 @@ import com.parkstat.backend.parkstat.repositories.CarRepository;
 import com.parkstat.backend.parkstat.repositories.LogRepository;
 import com.parkstat.backend.parkstat.repositories.ParkingRepository;
 import com.parkstat.backend.parkstat.service.EncryptionService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +40,37 @@ public class LogController {
     @Autowired
     EncryptionService encryptionService;
 
+    @Operation(summary = "Create log", description = "Must be called from ML model")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully created",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Log.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Access denied",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Parking not found",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "The car is not parked here or parked somewhere else",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Decryption error",
+                    content = @Content
+            )
+    })
     @PostMapping(path = "", produces = "application/json")
     public Log create(@Valid @RequestBody LogDTO logDTO) {
         Optional<Parking> parkingOptional = parkingRepository.findById(logDTO.getParkingId());
