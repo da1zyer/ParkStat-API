@@ -8,6 +8,7 @@ import com.parkstat.backend.parkstat.models.user.User;
 import com.parkstat.backend.parkstat.repositories.CameraRepository;
 import com.parkstat.backend.parkstat.repositories.ParkingRepository;
 import com.parkstat.backend.parkstat.service.EncryptionService;
+import com.parkstat.backend.parkstat.service.ParkingService;
 import com.parkstat.backend.parkstat.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -23,7 +24,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Optional;
 
 @Tag(name = "Parking")
 @RestController
@@ -38,6 +38,8 @@ public class ParkingController {
     private EncryptionService encryptionService;
     @Autowired
     private CameraRepository cameraRepository;
+    @Autowired
+    private ParkingService parkingService;
 
     @Operation(summary = "Create new parking")
     @ApiResponses(value = {
@@ -117,20 +119,7 @@ public class ParkingController {
             @RequestHeader(name = "Authorization", required = false) String authHeader,
             @RequestParam int id
     ) {
-        User user = userService.getUserFromHeader(authHeader);
-        Optional<Parking> parkingOptional = parkingRepository.findById(id);
-        if (parkingOptional.isPresent()) {
-            Parking parking = parkingOptional.get();
-            if (parking.getUser().getId() == user.getId()) {
-                return parking;
-            }
-            else {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Parking does not belong to the user");
-            }
-        }
-        else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Parking not found");
-        }
+        return parkingService.getParking(id, authHeader);
     }
 
     @Operation(summary = "Change parking parameters")
@@ -174,47 +163,35 @@ public class ParkingController {
             @Schema(hidden = true)
             @RequestHeader(name = "Authorization", required = false) String authHeader,
             @Valid @RequestBody ParkingUpdateDTO parkingUpdateDTO) {
-        Optional<Parking> parkingOptional = parkingRepository.findById(parkingUpdateDTO.getId());
-        if (parkingOptional.isPresent()) {
-            User user = userService.getUserFromHeader(authHeader);
-            Parking parking = parkingOptional.get();
-            if (user.getId() == parking.getUser().getId()) {
-                String name = parkingUpdateDTO.getName();
-                Integer spaceCount = parkingUpdateDTO.getSpaceCount();
-                Integer takenSpaceCount = parkingUpdateDTO.getTakenSpaceCount();
-                String accessKey = parkingUpdateDTO.getAccessKey();
-                if (name != null) {
-                    parking.setName(name);
-                }
-                if (spaceCount != null) {
-                    parking.setSpaceCount(spaceCount);
-                }
-                if (takenSpaceCount != null) {
-                    if (takenSpaceCount > parking.getSpaceCount()) {
-                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Taken Spaces greater than Space Count");
-                    }
-                    else {
-                        parking.setTakenSpaceCount(takenSpaceCount);
-                    }
-                }
-                if (accessKey != null) {
-                    try {
-                        String newKey = encryptionService.encryptKey(accessKey);
-                        parking.setAccessKey(newKey);
-                    } catch (Exception e) {
-                        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Encryption error");
-                    }
-                }
-                parkingRepository.save(parking);
-                return parking;
+        Parking parking = parkingService.getParking(parkingUpdateDTO.getId(), authHeader);
+        String name = parkingUpdateDTO.getName();
+        Integer spaceCount = parkingUpdateDTO.getSpaceCount();
+        Integer takenSpaceCount = parkingUpdateDTO.getTakenSpaceCount();
+        String accessKey = parkingUpdateDTO.getAccessKey();
+        if (name != null) {
+            parking.setName(name);
+        }
+        if (spaceCount != null) {
+            parking.setSpaceCount(spaceCount);
+        }
+        if (takenSpaceCount != null) {
+            if (takenSpaceCount > parking.getSpaceCount()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Taken Spaces greater than Space Count");
             }
             else {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Parking does not belong to the user");
+                parking.setTakenSpaceCount(takenSpaceCount);
             }
         }
-        else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Parking not found");
+        if (accessKey != null) {
+            try {
+                String newKey = encryptionService.encryptKey(accessKey);
+                parking.setAccessKey(newKey);
+            } catch (Exception e) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Encryption error");
+            }
         }
+        parkingRepository.save(parking);
+        return parking;
     }
 
     @Operation(summary = "Delete parking")
@@ -253,21 +230,9 @@ public class ParkingController {
             @Schema(hidden = true)
             @RequestHeader(name = "Authorization", required = false) String authHeader,
             @Valid @RequestBody ParkingDeleteDTO parkingDeleteDTO) {
-        Optional<Parking> parkingOptional = parkingRepository.findById(parkingDeleteDTO.getId());
-        if (parkingOptional.isPresent()) {
-            User user = userService.getUserFromHeader(authHeader);
-            Parking parking = parkingOptional.get();
-            if (user.getId() == parking.getUser().getId()) {
-                parkingRepository.delete(parking);
-                return parking;
-            }
-            else {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Parking does not belong to the user");
-            }
-        }
-        else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Parking not found");
-        }
+        Parking parking = parkingService.getParking(parkingDeleteDTO.getId(), authHeader);
+        parkingRepository.delete(parking);
+        return parking;
     }
 
     @Operation(summary = "Get all user parking")
@@ -335,28 +300,16 @@ public class ParkingController {
             @Schema(hidden = true)
             @RequestHeader(name = "Authorization", required = false) String authHeader,
             @Valid @RequestBody CameraDTO cameraDTO) {
-        Optional<Parking> parkingOptional = parkingRepository.findById(cameraDTO.getParkingId());
-        if (parkingOptional.isPresent()) {
-            User user = userService.getUserFromHeader(authHeader);
-            Parking parking = parkingOptional.get();
-            if (user.getId() == parking.getUser().getId()) {
-                for (Camera camera : cameraRepository.findCameraByParkingId(parking.getId())) {
-                    if (camera.getEvent().equals(cameraDTO.getEvent())) {
-                        throw new ResponseStatusException(HttpStatus.CONFLICT, "A camera with this event already exists");
-                    }
-                }
-                Camera camera = new Camera(cameraDTO);
-                camera.setParking(parking);
-                cameraRepository.save(camera);
-                return camera;
-            }
-            else {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Parking does not belong to the user");
+        Parking parking = parkingService.getParking(cameraDTO.getParkingId(), authHeader);
+        for (Camera camera : cameraRepository.findCameraByParkingId(parking.getId())) {
+            if (camera.getEvent().equals(cameraDTO.getEvent())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "A camera with this event already exists");
             }
         }
-        else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Parking not found");
-        }
+        Camera camera = new Camera(cameraDTO);
+        camera.setParking(parking);
+        cameraRepository.save(camera);
+        return camera;
     }
 
     @Operation(summary = "Get camera")
@@ -391,25 +344,13 @@ public class ParkingController {
             @RequestHeader(name = "Authorization", required = false) String authHeader,
             @RequestParam int parkingId,
             @RequestParam CarEvent event) {
-        User user = userService.getUserFromHeader(authHeader);
-        Optional<Parking> parkingOptional = parkingRepository.findById(parkingId);
-        if (parkingOptional.isPresent()) {
-            Parking parking = parkingOptional.get();
-            if (parking.getUser().getId() == user.getId()) {
-                for (Camera camera : cameraRepository.findCameraByParkingId(parkingId)) {
-                    if (camera.getEvent().equals(event)) {
-                        return camera;
-                    }
-                }
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Camera not found");
-            }
-            else {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Parking does not belong to the user");
+        Parking parking = parkingService.getParking(parkingId, authHeader);
+        for (Camera camera : cameraRepository.findCameraByParkingId(parkingId)) {
+            if (camera.getEvent().equals(event)) {
+                return camera;
             }
         }
-        else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Parking not found");
-        }
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Camera not found");
     }
 
     @Operation(summary = "Change camera parameters")
@@ -453,34 +394,11 @@ public class ParkingController {
             @Schema(hidden = true)
             @RequestHeader(name = "Authorization", required = false) String authHeader,
             @Valid @RequestBody CameraUpdateDTO cameraUpdateDTO) {
-        Optional<Parking> parkingOptional = parkingRepository.findById(cameraUpdateDTO.getParkingId());
-        if (parkingOptional.isPresent()) {
-            User user = userService.getUserFromHeader(authHeader);
-            Parking parking = parkingOptional.get();
-            if (user.getId() == parking.getUser().getId()) {
-                Optional<Camera> optionalCamera = cameraRepository.findById(cameraUpdateDTO.getId());
-                if (optionalCamera.isPresent()) {
-                    Camera camera = optionalCamera.get();
-                    if (camera.getParking().getId() == parking.getId()) {
-                        camera.setIp(cameraUpdateDTO.getIp());
-                        cameraRepository.save(camera);
-                        return camera;
-                    }
-                    else {
-                        throw new ResponseStatusException(HttpStatus.CONFLICT, "Camera does not belong to the parking");
-                    }
-                }
-                else {
-                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Camera not found");
-                }
-            }
-            else {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Parking does not belong to the user");
-            }
-        }
-        else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Parking not found");
-        }
+        Parking parking = parkingService.getParking(cameraUpdateDTO.getParkingId(), authHeader);
+        Camera camera = parkingService.getCamera(cameraUpdateDTO.getId(), parking);
+        camera.setIp(cameraUpdateDTO.getIp());
+        cameraRepository.save(camera);
+        return camera;
     }
 
     @Operation(summary = "Delete camera")
@@ -524,32 +442,9 @@ public class ParkingController {
             @Schema(hidden = true)
             @RequestHeader(name = "Authorization", required = false) String authHeader,
             @Valid @RequestBody CameraDeleteDTO cameraDeleteDTO) {
-        Optional<Parking> parkingOptional = parkingRepository.findById(cameraDeleteDTO.getParkingId());
-        if (parkingOptional.isPresent()) {
-            User user = userService.getUserFromHeader(authHeader);
-            Parking parking = parkingOptional.get();
-            if (user.getId() == parking.getUser().getId()) {
-                Optional<Camera> optionalCamera = cameraRepository.findById(cameraDeleteDTO.getId());
-                if (optionalCamera.isPresent()) {
-                    Camera camera = optionalCamera.get();
-                    if (camera.getParking().getId() == parking.getId()) {
-                        cameraRepository.delete(camera);
-                        return camera;
-                    }
-                    else {
-                        throw new ResponseStatusException(HttpStatus.CONFLICT, "Camera does not belong to the parking");
-                    }
-                }
-                else {
-                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Camera not found");
-                }
-            }
-            else {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Parking does not belong to the user");
-            }
-        }
-        else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Parking not found");
-        }
+        Parking parking = parkingService.getParking(cameraDeleteDTO.getParkingId(), authHeader);
+        Camera camera = parkingService.getCamera(cameraDeleteDTO.getId(), parking);
+        cameraRepository.delete(camera);
+        return camera;
     }
 }
